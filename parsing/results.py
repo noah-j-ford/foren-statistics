@@ -17,7 +17,7 @@ but it doesn't know anything about statistics.
 import warnings
 import pandas as pd
 import numpy as np
-import parsing.corrections as cor
+import parsing.edgecases as edg
 from config import YEAR, ROOT, TOURNAMENTS
 import utils as util
 warnings.filterwarnings('ignore')
@@ -25,200 +25,6 @@ warnings.filterwarnings('ignore')
 # =============================================================================
 #### RAW FORMAT
 # =============================================================================
-
-
-#### LSW Bullshit
-def process_df_finals(df):
-    df_finals = pd.DataFrame()
-    df = util.drop_headers(df, 'Final round')
-    
-    df.reset_index(drop=True, inplace=True)
-    event_groups = df.groupby('Event')
-    for event_name, df_event in event_groups:
-        #Drops Event header
-        df_event = util.drop_event_header(df_event)
-        df_event.reset_index(drop=True, inplace=True)
-
-        columns = df_event.iloc[0,:].to_list()
-        [columns[-3], columns[-2], columns[-1]] = ['Event', 'Tournament', 'Break']
-        df_event.columns = columns
-        
-        df_event = util.drop_headers(df_event, columns[0])  # drop table headers
-        try:
-            df_event.drop(['Judges'], axis=1, inplace=True)
-        except KeyError:
-            pass
-        df_event = df_event.dropna(axis=1, how='all')
-
-        if len(df_event.columns) == 16:
-            df_event.columns = ['Code', 'Competitor', 'Team', 'F1', 'F2', 'F3', 'F4',
-                                'F5', 'Cume_TOTAL', 'Recips_TOTAL', 'Cume_F', 'Recips_F',
-                                'FinalResult', 'Event', 'Tournament', 'Break']
-        elif len(df_event.columns) == 14: #OID Champs at LSW 2026
-            df_event.columns = ['Code', 'Competitor', 'Team', 'F1', 'F2','F3','F4','F5',
-                                'Cume_F','Recips_F','FinalResult',
-                                'Event','Tournament','Break']
-            df_event['Cume_TOTAL'] = np.nan
-            df_event['Recips_TOTAL'] = np.nan
-            
-            df_event['temp'] = (
-                df_event['FinalResult'].fillna(0).astype(int).astype(str) + '_' +
-                df_event['Break'].fillna(0).astype(int).astype(str)
-                )
-
-            df_event['FinalResult'] = df_event['temp'].apply(cor.correct_oid_finalresult)
-            df_event.drop(['temp'],axis=1,inplace=True)
-            
-        elif len(df_event.columns) == 12: #OID Honors? I Presume?
-            df_event.columns = ['Code', 'Competitor', 'Team', 'F1', 'F2', 'F3',
-                                'Cume_F', 'Recips_F', 'FinalResult', 'Event', 
-                                'Tournament', 'Break']
-            df_event['F4'] = np.nan
-            df_event['F5'] = np.nan
-            df_event['Cume_TOTAL'] = np.nan
-            df_event['Recips_TOTAL'] = np.nan
-
-            df_event['temp'] = (
-                df_event['FinalResult'].fillna(0).astype(int).astype(str) + '_' +
-                df_event['Break'].fillna(0).astype(int).astype(str)
-                )
-
-            df_event['FinalResult'] = df_event['temp'].apply(cor.correct_oid_finalresult)
-            df_event.drop(['temp'],axis=1,inplace=True)
-
-        else:
-            print(f"Something is wrong with: {event_name}")
-            
-        column_order = ['Code','Competitor', 'Team', 'F1', 'F2', 'F3', 'F4', 'F5',
-                        'Cume_TOTAL', 'Recips_TOTAL', 'Cume_F', 'Recips_F', 
-                        'FinalResult', 'Event', 'Tournament', 'Break']
-        df_event = df_event.reindex(columns=column_order)
-        df_finals = pd.concat([df_finals, df_event], axis=0)
-    
-    df_finals = df_finals.apply(util.safe_to_numeric)
-    df_finals.reset_index(drop=True, inplace=True)
-    return df_finals
-
-def create_semi_sections_column(df):
-    semi_sections, char = [[], 64] #ord('A') = 65, 'B' = 66, etc.
-                                   #There's an initial header that will always add 1
-                                   #on the first loop, so this is 64 instead of 65
-    event_flag = 'DI'
-    
-    for i, row in df.iterrows():
-        cell = row[0]
-        event = row['Event']
-        if event != event_flag:
-            char = 64
-            event_flag = event
-        if cell.endswith(' round'):
-            char +=1
-        semi_sections.append(chr(char))
-    df['Semi_Sec'] = semi_sections
-    return df
-
-def process_df_semis(df):
-    df.reset_index(drop=True, inplace=True)
-    df = create_semi_sections_column(df)
-
-    df = df.dropna(axis=1, how='all')
-    df = util.drop_headers(df, 'Semifinal round')
-    df = util.drop_nan_rows(df, 3)  #drops semifinalist rows not in that section (and are thus nan)
-
-    columns = df.iloc[0,:].to_list()
-    [columns[-4], columns[-3], columns[-2], columns[-1]] = ['Event', 'Tournament', 'Break', 'Semi_Sec']
-
-    [columns[3], columns[4], columns[5]] = ['S1','S2','S3']
-
-    df.columns = columns
-    df = util.drop_headers(df, columns[0])  # drop table headers
-    df.rename({'Name':'Competitor',
-               'All ranks':'Cume_ST',
-               'All':'Recips_ST',
-               'Rank':'Cume_S',
-               'Recips':'Recips_S',
-               'Place':'Semi_Result'}, 
-              axis=1, inplace=True)
-
-    df = df.apply(util.safe_to_numeric)
-
-    # Sorting by primary and secondary score columns within each group
-    df.sort_values(by=['Event', 'Semi_Sec', 'Cume_S', 'Recips_S'],
-                   ascending=[True, True, True, False], inplace=True)
-    # Ranking scores within each Event and Semifinal Section
-    df['Semi_Rd_Rk'] = df.groupby(['Event', 'Semi_Sec']).cumcount() + 1
-
-    df.reset_index(drop=True, inplace=True)
-    return df
-
-def create_finals_list(df):
-    break_codes = {
-        "Final":1, "Next-in Final":2, "Merit Final":3, "Consolation Final":4, "Semifinal":5,
-        }
-
-    finals_list, finals_name = [[],""]
-    
-    for i, row in df.iterrows():
-        cell = row[0]
-        if cell.endswith(' round'):
-            finals_name = cell.replace(' round','')
-        finals_list.append(finals_name)
-    df['Break'] = finals_list 
-    df['Break'] = df['Break'].map(break_codes)
-    return df
-
-def process_df_elim(df, sheet, tournament_name):
-    df = util.drop_headers(df, 'Elimination round results')
-    df.reset_index(drop=True, inplace=True)
-    event_column_list = util.create_event_column_list(df, tournament_name)
-    df['Event'] = event_column_list
-    df['Tournament'] = sheet
-    
-    df = util.drop_headers(df, tournament_name)
-    df = util.drop_nan_rows(df, 0)
-
-    df = create_finals_list(df)
-
-    df_finals = df[df['Break'] == 1]
-    df_finals = process_df_finals(df_finals)
-
-    df_semis = df[df['Break'] == 5]
-    df_semis = process_df_semis(df_semis)
-
-    return df, df_finals, df_semis
-
-def append_semi_and_finals_data(df, df_finals, df_semis):
-    for df_temp in [df, df_finals, df_semis]:
-        df_temp['Event'] = df_temp['Event'].astype(str).str.upper()  # "INF" was converted to infinity
-        df_temp['ID'] = df_temp['Code'] + df_temp['Event']
-    df_finals.index = df_finals['ID']
-    df_semis.index = df_semis['ID']
-
-    data_finals = util.create_container(
-        ['F1', 'F2', 'F3', 'Cume_F', 'Recips_F', 'FinalResult', 'F4', 'F5', 'Cume_TOTAL', 
-         'Recips_TOTAL']
-        )
-                                        
-    data_semis = util.create_container(
-        ['S1', 'S2', 'S3', 'Cume_S', 'Recips_S', 'Cume_ST', 'Recips_ST', 'Semi_Sec', 'Semi_Rd_Rk',
-         'Semi_Result']
-        )
-
-    for i, row in df.iterrows():
-        ID = row['ID']
-        for column, f_list in data_finals.items():
-            if ID in df_finals['ID'].to_list():
-                f_list.append(df_finals.loc[ID, column])
-            else:
-                f_list.append(np.nan)
-        for column, s_list in data_semis.items():
-            if ID in df_semis['ID'].to_list():
-                s_list.append(df_semis.loc[ID, column])
-            else:
-                s_list.append(np.nan)
-    df_finals, df_semis = pd.DataFrame(data_finals), pd.DataFrame(data_semis)
-    df = pd.concat([df, df_finals, df_semis], axis=1)
-    return df
 
 def division_text_in_prelim_column(df):
     """
@@ -315,16 +121,8 @@ def process_raw_dataframe(df, sheet):
     tournament_name = df[0][0]
     df = util.drop_speechwire_rows(df)
     division_header = locate_division_header(df, tournament_name)
-
-    df_finals, df_semis = None, None
-    try:
-        idx = df[0].to_list().index('Elimination round results')-2
-        df_elim = df.iloc[idx:,:]
-        df = df.iloc[:idx,:]
-        df = df.dropna(axis=1, how='all')
-        df_elim, df_finals, df_semis = process_df_elim(df_elim, sheet, tournament_name)
-    except ValueError:
-        pass
+    
+    df, df_finals, df_semis = edg.check_for_elim_rounds(df, sheet, tournament_name)
 
     event_column_list = util.create_event_column_list(df, tournament_name)
     df.columns = df.iloc[2, :].to_list()
@@ -352,22 +150,7 @@ def process_raw_dataframe(df, sheet):
             pass
 
     if df_finals is not None:
-        df = append_semi_and_finals_data(df, df_finals, df_semis)
-        df['Finals'] = (
-            df['F1'].fillna(0).astype(int).astype(str) + ', ' +
-            df['F2'].fillna(0).astype(int).astype(str) + ', ' +
-            df['F3'].fillna(0).astype(int).astype(str) + ', ' +
-            df['F4'].fillna(0).astype(int).astype(str) + ', ' +
-            df['F5'].fillna(0).astype(int).astype(str)
-            )
-        df['Finals'] = df['Finals'].replace('0, 0, 0, 0, 0', np.nan)
-
-        df.drop(['F1','F2','F3','F4','F5'], axis=1, inplace=True)
-        df = cor.manually_fix_oids(df)
-        df.rename({'Cume_F':'Rank',
-                   'Recips_F':'Recips',
-                   'FinalResult':'Finals.1'},
-                  axis=1, inplace=True)
+        df = edg.attach_elim_data(df, df_finals, df_semis)
     return df
 
 def clean_base_results_format():
@@ -729,7 +512,7 @@ def automate_results(data):
         df = create_break_columns(df)
         df = add_prelim_result(df)
         if tournament == 'LSW':
-            df = cor.fix_lsw_duo_prelims(df)
+            df = edg.fix_lsw_duo_prelims(df)
         df = fix_finalresult(df)
         
         df = drop_irrelevant_columns(df) 
@@ -743,7 +526,7 @@ def automate_results(data):
     df_merged.replace('W', np.nan, inplace=True)
     df_merged = df_merged.apply(util.safe_to_numeric)
     if YEAR == '25-26':
-        df_merged = cor.manually_update_nat_quals_info_semis(df_merged)
+        df_merged = edg.manually_update_nat_quals_info_semis(df_merged)
     return df_merged
 
 def process_results():
