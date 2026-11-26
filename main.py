@@ -46,6 +46,7 @@ def update_4n6(NO_OID_FLAG=0, most_recent_tournament=False):
         dpt.make_depth_chart() 
         progress_bar.update(4)  #1:07  ~20.4%
 
-update_4n6()
+if __name__ == "__main__":
+    update_4n6()
 
 
