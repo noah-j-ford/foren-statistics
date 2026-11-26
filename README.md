@@ -24,31 +24,31 @@ The entry point is `main.py` (fka `update_forensics.py`), which runs the full pi
 
 ```text
 foren-statistics/
-├── main.py					# runs the full pipeline
-├── config.py					# year, data paths, event and tournament lists
-├── standardization.py			# name and event normalization
-├── utils.py					# helpers shared by two or more modules
-├── formatting.py				# Excel output formatting
+├── main.py                    # runs the full pipeline
+├── config.py                  # year, data paths, event and tournament lists
+├── standardization.py         # name and event normalization
+├── utils.py                   # helpers shared by two or more modules
+├── formatting.py              # Excel output formatting
 │
-├── parsing/					# raw Speechwire → canonical tables
-│   ├── results.py           	# Speechwire "Print Results" page → starts Results by Entry.xlsx
-│   ├── sections.py          	# Speechwire "Print List-style Schematics" page → Sections by Judge.xlsx, Sections by Room.xlsx
-│   ├── attach_sections.py   	# completes Results by Entry.xlsx (section, section size, and judge data added)
-│   └── corrections.py       	# one-off manual fixes (semifinal handling, manual corrections)
+├── parsing/                   # raw Speechwire → canonical tables
+│   ├── results.py                # Speechwire "Print Results" page → starts Results by Entry.xlsx
+│   ├── sections.py               # Speechwire "Print List-style Schematics" page → Sections by Judge.xlsx, Sections by Room.xlsx
+│   ├── attach_sections.py        # completes Results by Entry.xlsx (section, section size, and judge data added)
+│   └── corrections.py            # one-off manual fixes (semifinal handling, manual corrections)
 │
-├── stats/                   	# canonical tables → statistics, ratings, outputs
-│   ├── competitors.py    			# Stats by Competitor.xlsx
-│   ├── schools.py					# Code/Stats by School.xlsx
-│   ├── tournaments.py				# Code/Stats by Tournament.xlsx
-│   ├── judges.py					# Stats by Judge.xlsx
-│   ├── h2h.py						# H2H.xlsx, individual event sheets in Code/H2H
-│   ├── elo.py						# ELO.xlsx
-│   └── depthchart.py				# Depth Chart.xlsx
+├── stats/                     # canonical tables → statistics, ratings, outputs
+│   ├── competitors.py            # Stats by Competitor.xlsx
+│   ├── schools.py                # Code/Stats by School.xlsx
+│   ├── tournaments.py            # Code/Stats by Tournament.xlsx
+│   ├── judges.py                 # Stats by Judge.xlsx
+│   ├── h2h.py                    # H2H.xlsx, individual event sheets in Code/H2H
+│   ├── elo.py                    # ELO.xlsx
+│   └── depthchart.py             # Depth Chart.xlsx
 │
-├── reports/                 # work in progress; depthchart, formatting, and outputs migrated here?
-│   └── timing.py					# runs profiler, will control progress bar weights
+├── reports/                   # work in progress; depthchart, formatting, and outputs migrated here?
+│   └── timing.py                 # runs profiler, will control progress bar weights
 │
-├── experiments/             # to be added; for deprecated features or functionality not wired into the main pipeline
+├── experiments/               # to be added; for deprecated features or functionality not wired into the main pipeline
 │   └── 
 │
 ├── README.md
