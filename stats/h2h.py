@@ -13,8 +13,9 @@ import os
 import copy
 import pandas as pd
 import numpy as np
-from config import EVENT_LIST, ROOT, NE_NORTH_SCHOOLS
+from config import EVENT_LIST, ROOT
 from formatting import write_sheet
+import experiments.experiments as exp
 
 
 def create_base_data(df_event):
@@ -24,6 +25,7 @@ def create_base_data(df_event):
     base_data = base_data.to_dict()[0]  # convert back to dict
     return base_data
     
+
 def collect_data():
     data = {e: {} for e in EVENT_LIST}
     df = pd.read_excel(ROOT + r'\Results by Entry.xlsx')
@@ -39,6 +41,7 @@ def collect_data():
     # every competitor with key/value pairs of `opponent:0`; 
     # ex {'OO':{'Noah Ford':{'Zoe Keese':0, 'Rahul Guda':0,}}} etc.
     return data
+
 
 def run_pairwise_comparisons(df, data):
     prelim_data = copy.deepcopy(data) # data.copy() only copied the outer layer of the dict; .deepcopy() makes a copy of all nested dicts.
@@ -76,14 +79,18 @@ def run_pairwise_comparisons(df, data):
                                 prelim_data[event_name][attacker][defender] += int(pairwise_df.loc[attacker,defender])
     return data, prelim_data
 
+
 def calculate_meetings(wins, wins_inv):
     return wins + wins_inv
 
+
 def calculate_net_wins(wins, wins_inv):
     return wins - wins_inv
- 
+
+
 def calculate_win_pct(wins, meetings):
     return round((wins / meetings)*100)
+
 
 def calculate_h2h_data_sheets(event_name, section_choice, data, prelim_data):
     data_sheets = {'WinPct':'', 'Net':'', 'Meetings':'', 'Wins':''}
@@ -100,12 +107,14 @@ def calculate_h2h_data_sheets(event_name, section_choice, data, prelim_data):
     data_sheets['WinPct'] = calculate_win_pct(data_sheets['Wins'], data_sheets['Meetings'])
     return data_sheets
 
+
 def add_headers(data_sheets):
     header = pd.DataFrame(data_sheets['Wins'].columns).T
     header.columns = data_sheets['Wins'].columns
     for sheet in ['WinPct','Net','Meetings','Wins']:
         data_sheets[sheet] = pd.concat([header, data_sheets[sheet]], axis=0)
     return data_sheets
+
 
 def save_h2h_excel(writer, data):
     for sheet in ['WinPct','Net','Meetings','Wins']:
@@ -115,6 +124,7 @@ def save_h2h_excel(writer, data):
         else:
             write_sheet(writer, df, sheet, layout="h2h_counts", index=False, header=None)
     writer.close()
+
 
 def h2h_event_sheets(data, prelim_data, NO_OID_FLAG=0):
     for event_name in data:
@@ -132,13 +142,15 @@ def h2h_event_sheets(data, prelim_data, NO_OID_FLAG=0):
                     writer = pd.ExcelWriter(ROOT + rf'\Code\H2H\All Classes (Prelims)\{event_name}.xlsx',
                                             engine='xlsxwriter')
                 save_h2h_excel(writer, data_sheets)  
-        
+
+
 def make_h2hs(NO_OID_FLAG=0):
     data = collect_data()
     df = pd.read_excel(ROOT + r'\Results by Entry.xlsx')
     df = df[['Competitor','Tournament','Event','Code','P1','P2','P3','F1','F2','F3','F4','F5','S1','S2','S3','Sc1','Sc2','Sc3','ScF','ScS']]
     data, prelim_data = run_pairwise_comparisons(df, data)
     h2h_event_sheets(data, prelim_data, NO_OID_FLAG)
+
 
 def create_class_a_list():
     df = pd.read_excel(ROOT + r'\Results by Entry.xlsx')
@@ -151,21 +163,12 @@ def create_class_a_list():
     class_a_list.append(0)
     return class_a_list
 
-def create_specifier_list():
-    df = pd.read_excel(ROOT + r'\ELO.xlsx')
-    df = df[df['Tm'].isin(NE_NORTH_SCHOOLS)]
-    df.reset_index(drop=True, inplace=True)
-    df = df.drop_duplicates(subset='Competitor', keep="first")
-    
-    specifier_list = df['Competitor'].to_list() 
-    specifier_list.append(0)
-    return specifier_list
 
 def trim_h2hs_to_specification(folder = "Class A"):
     if folder == 'Class A':
         specifier_list = create_class_a_list()
     else:
-        specifier_list = create_specifier_list()
+        specifier_list = exp.create_specifier_list()
     
     for subdir, dirs, files in os.walk(ROOT + r'\Code\H2H\All Classes'):
         for file in files:
@@ -181,6 +184,7 @@ def trim_h2hs_to_specification(folder = "Class A"):
             writer = pd.ExcelWriter(ROOT + rf'\Code\H2H\{folder}\{event_name}.xlsx',
                                     engine='xlsxwriter')
             save_h2h_excel(writer, data)
+
 
 def save_master_formatting(writer, df, event):
     df = df.T.reset_index().T  # turns column names into row
