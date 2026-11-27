@@ -1,5 +1,8 @@
 import pandas as pd
 from config import ROOT, NE_NORTH_SCHOOLS
+from formatting import write_sheet
+from multielo import MultiElo, Player
+import stats.h2h as h2h
 
 def create_specifier_list():
     """Used for Nat Quals"""
@@ -12,6 +15,67 @@ def create_specifier_list():
     specifier_list.append(0)
     return specifier_list
 
+def create_class_a_list():
+    df = pd.read_excel(ROOT + r'\Results by Entry.xlsx')
+    
+    df = df[['Competitor','Tm','Class','District']]
+    df = df.drop_duplicates(subset='Competitor', keep="first")
+    
+    class_a = df[df['Class'] == 'A']
+    class_a_list = class_a['Competitor'].to_list() 
+    class_a_list.append(0)
+    return class_a_list
+
+
+def trim_h2hs_to_specification(folder = "Class A"):
+    if folder == 'Class A':
+        specifier_list = create_class_a_list()
+    else:
+        specifier_list = create_specifier_list()
+    
+    for subdir, dirs, files in os.walk(ROOT + r'\Code\H2H\All Classes'):
+        for file in files:
+            event_name = file.replace('.xlsx','')
+            path = os.path.join(subdir, file)
+            
+            data = {}
+            for sheet in ['WinPct', 'Net', 'Meetings', 'Wins']:
+                data[sheet] = pd.read_excel(path, sheet_name=sheet, header=None)
+                for i in range(2):  # Runs twice bc does one axis, transposes, does other
+                    data[sheet] = data[sheet][data[sheet][0].isin(specifier_list)].T
+            
+            writer = pd.ExcelWriter(ROOT + rf'\Code\H2H\{folder}\{event_name}.xlsx',
+                                    engine='xlsxwriter')
+            h2h.save_h2h_excel(writer, data)
+
+def elo_pred_formatting(event_name, win_pct, writer):
+    win_pct = pd.DataFrame(win_pct)
+    win_pct.index = win_pct.columns
+    header = pd.DataFrame(win_pct.columns).T
+    header.columns = win_pct.columns
+    win_pct = pd.concat([header, win_pct], axis=0)
+    df = win_pct.reset_index()
+    write_sheet(writer, df, str(event_name), layout="elo_pred", index=False, header=None)
+
+def elo_pred_sims(df_elo, K_VALUE, D_VALUE, EXP, writer):
+    Elo = MultiElo(k_value=K_VALUE, d_value=D_VALUE, score_function_base=EXP)
+    event_groups = df_elo.groupby('Event')
+    for event_name, df_event in event_groups:
+        df_event.sort_values(by='Competitor', inplace=True)
+        df_event.reset_index(drop=True, inplace=True)
+        win_pct = {}
+        
+        # loop over competitors
+        for _, c_row in df_event.iterrows():
+            win_pct.update({c_row['Competitor']:[]})
+            # for each competitor, loop over all over competitors (opponents)
+            for _, o_row in df_event.iterrows():
+                probability = Elo.simulate_win_probabilities([o_row['ELO'], c_row['ELO']],
+                                                             n_sim=500)[0][0]
+                win_pct[c_row['Competitor']].append(round(probability*100, 2))     
+        elo_pred_formatting(event_name, win_pct, writer)
+    writer.close()
+    
 # %% from local minima - used for visualizing/creating elo tier breaks
 
 # from common_methods import *

@@ -21,12 +21,14 @@ import pandas as pd
 from multielo import MultiElo, Player
 from config import EVENT_LIST, ROOT, YEAR, TOURNAMENTS
 from formatting import write_sheet
+import utils as util
 
 def map_tournament_order_onto_spreadsheet(df):
     df['Tournament_ID'] = df['Tournament'].map(TOURNAMENTS[YEAR])
     df.sort_values(by=['Tournament_ID', 'Event', 'Round', 'Sect.'], inplace=True)
     df.reset_index(drop=True, inplace=True)
     return df
+
 
 def create_elo_sections_sheet():
     df_results = pd.read_excel(ROOT + r"\Results by Entry.xlsx")
@@ -41,32 +43,21 @@ def create_elo_sections_sheet():
         df_sections[f'ID{num}'] = df_sections['Tournament'] + df_sections['Event'] + df_sections[f'Sp{num}']
     for num in [f'{i+1}' for i in range(8)]:  
         df_sections[f'Name{num}'] = df_sections[f'ID{num}'].map(id_dict)
-
-    data = {'P1':{},'P2':{},'P3':{},'P4':{},'P5':{},'P6':{},'F1':{},'F2':{},'F3':{},'F4':{},'F5':{},'S1':{},'S2':{},'S3':{}}  # !!!
-    data['P1'] = pd.Series(df_results.P1.values, index=df_results.Unique_ID).to_dict()
-    data['P2'] = pd.Series(df_results.P2.values, index=df_results.Unique_ID).to_dict()
-    data['P3'] = pd.Series(df_results.P3.values, index=df_results.Unique_ID).to_dict()
-    data['P4'] = pd.Series(df_results.P4.values, index=df_results.Unique_ID).to_dict()
-    data['P5'] = pd.Series(df_results.P5.values, index=df_results.Unique_ID).to_dict()
-    data['P6'] = pd.Series(df_results.P6.values, index=df_results.Unique_ID).to_dict()
-    data['F1'] = pd.Series(df_results.F1.values, index=df_results.Unique_ID).to_dict()
-    data['F2'] = pd.Series(df_results.F2.values, index=df_results.Unique_ID).to_dict()
-    data['F3'] = pd.Series(df_results.F3.values, index=df_results.Unique_ID).to_dict()
-    data['F4'] = pd.Series(df_results.F3.values, index=df_results.Unique_ID).to_dict()
-    data['F5'] = pd.Series(df_results.F3.values, index=df_results.Unique_ID).to_dict()
-    data['S1'] = pd.Series(df_results.S1.values, index=df_results.Unique_ID).to_dict()
-    data['S2'] = pd.Series(df_results.S2.values, index=df_results.Unique_ID).to_dict()
-    data['S3'] = pd.Series(df_results.S3.values, index=df_results.Unique_ID).to_dict()
-    ranks = {'RkA':{'1':[],'2':[],'3':[],'4':[],'5':[],'6':[],'7':[],'8':[]},  # !!!
-             'RkB':{'1':[],'2':[],'3':[],'4':[],'5':[],'6':[],'7':[],'8':[]},  # !!!
-             'RkC':{'1':[],'2':[],'3':[],'4':[],'5':[],'6':[],'7':[],'8':[]},  # !!!
-            }
+    
+    cols = ['P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'F1', 'F2', 'F3', 'F4', 'F5', 'S1', 'S2', 'S3']
+    data = df_results.set_index('Unique_ID')[cols].to_dict()
+    
+    ranks = {
+        'RkA': util.create_container(['12345678']),
+        'RkB': util.create_container(['12345678']),
+        'RkC': util.create_container(['12345678']),
+        }
 
     for i, row in df_sections.iterrows():
-        rd, sect, tournament_name, judge_count = [row['Round'],row['Sect.'],row['Tournament'],row['JudgeCount']]
+        rd, sect, tournament_name, judge_count = [row['Round'], row['Sect.'], row['Tournament'], row['JudgeCount']]
         ########### FINALS ###################3
         if rd == 'Final':
-            for num in ranks['RkA']: #1, 2, 3, 4, 5, 6, 7
+            for num in ranks['RkA']: #1, 2, 3, 4, 5, 6, 7, 8
                 try:
                     ranks['RkA'][num].append(data['F1'][row[f'ID{num}']])
                 except KeyError: #Finals section is smaller than 8
@@ -80,7 +71,7 @@ def create_elo_sections_sheet():
                     try:
                         ranks['RkC'][num].append(data['F3'][row[f'ID{num}']])
                     except KeyError:
-                        ranks['RkC'][num].append('') 
+                        ranks['RkC'][num].append('')
             else:
                 for num in ranks['RkA']: #Blank out B and C ranks, the round only has one ballot
                     ranks['RkB'][num].append('')
@@ -98,7 +89,7 @@ def create_elo_sections_sheet():
 
         ###################
         elif judge_count == 1:
-            if tournament_name not in ['LSW','Millard South']:#Flighted tournaments which had 2 judges in the first round of at least 1 event
+            if tournament_name not in ['LSW', 'Millard South']:#Flighted tournaments which had 2 judges in the first round of at least 1 event
                 for num in ranks['RkA']:
                     ranks['RkB'][num].append('')
                     ranks['RkC'][num].append('')
@@ -148,15 +139,15 @@ def create_elo_sections_sheet():
                         ranks['RkA'][num].append('')
                         ranks['RkB'][num].append('')
         else:
-            print("ERROR?: ",tournament_name, rd, sect, judge_count)
+            print("ERROR?: ", tournament_name, rd, sect, judge_count)
 
     rank_a = pd.DataFrame(ranks['RkA'])   
-    rank_a.columns = ['A1','A2','A3','A4','A5','A6','A7','A8']             
+    rank_a.columns = ['A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', 'A8']             
     rank_b = pd.DataFrame(ranks['RkB'])   
-    rank_b.columns = ['B1','B2','B3','B4','B5','B6','B7','B8'] 
+    rank_b.columns = ['B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8'] 
     rank_c = pd.DataFrame(ranks['RkC']).fillna('')
-    rank_c.columns = ['C1','C2','C3','C4','C5','C6','C7','C8']  
-    df = pd.concat([df_sections,rank_a,rank_b,rank_c],axis=1)       
+    rank_c.columns = ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8']  
+    df = pd.concat([df_sections, rank_a, rank_b, rank_c],axis=1)       
     df.to_excel(ROOT + r'\Code\Sections by Room.xlsx', index=False)
 
 def create_full_competitor_dict(BASE_RATING=1000):
@@ -198,7 +189,7 @@ def calculate_elo_scores(df, elo_data, Elo, ChampsElo, StableElo, StableChampsEl
     for i, row in df.iterrows():
         event_name, tournament_id = [row['Event'], row['Tournament_ID']]
         if tournament_id: #in [...]: #This was the "Select Tournaments" portion
-            data = {'Name':[],'A':[],'B':[],'C':[]}   # !!!
+            data = util.create_container(['Name', 'A', 'B', 'C'])
             for j in [f'{k+1}' for k in range(largest_section_size)]:
                 for column in ['Name','A','B','C']:
                     if row[f'{column}{j}'] == row[f'{column}{j}']:
@@ -232,7 +223,7 @@ def calculate_elo_scores(df, elo_data, Elo, ChampsElo, StableElo, StableChampsEl
     return elo_data
 
 def create_elo_spreadsheet(elo_data):
-    data = {'Event':[],'Competitor':[],'ELO':[],'Ballots':[]}  # !!!
+    data = util.create_container(['Event', 'Competitor', 'ELO', 'Ballots'])
     for event_name, competitor_dict in elo_data.items():
         for competitor_name, competitor in competitor_dict.items():
             data['Event'].append(event_name)
@@ -245,53 +236,26 @@ def create_elo_spreadsheet(elo_data):
     return df_elo
 
 def expand_elo_stats(df_elo, df_competitors):
-    df_elo['ID'] = df_elo['Competitor']+df_elo['Event']
-    df_team = df_competitors.loc[:,['Competitor','Tm','Class','District']]
+    df_elo['ID'] = df_elo['Competitor'] + df_elo['Event']
+    df_team = df_competitors.loc[:, ['Competitor','Tm','Class','District']]
     df_team.index = df_team['Competitor']
     df_team.drop(['Competitor'],axis=1,inplace=True)
     for column in df_team.columns:
         data = df_team[[column]].to_dict()[column]
         df_elo[column] = df_elo['Competitor'].map(data)
         
-    df_stats = df_competitors.loc[:,['Competitor','Event','AvgRk','AvgChampsRk','Up%','Break%','DepthPts']]
+    df_stats = df_competitors.loc[:, ['Competitor', 'Event', 'AvgRk', 'AvgChampsRk', 'Up%', 'Break%', 'DepthPts']]
     df_stats['ID'] = df_stats['Competitor']+df_stats['Event']
     df_stats.index = df_stats['ID']
-    df_stats.drop(['ID','Competitor','Event'],axis=1,inplace=True)
+    df_stats.drop(['ID','Competitor','Event'], axis=1, inplace=True)
     for column in df_stats.columns:
         data = df_stats[[column]].to_dict()[column]
         df_elo[column] = df_elo['ID'].map(data)
     df_elo.drop(['ID'],axis=1,inplace=True)
     
-    df_elo = df_elo[['Event','Competitor','Tm','ELO','Ballots','AvgRk','AvgChampsRk','Up%','Break%','DepthPts','Class','District']]
+    df_elo = df_elo[['Event', 'Competitor', 'Tm', 'ELO', 'Ballots', 'AvgRk', 'AvgChampsRk', 'Up%', 'Break%', 'DepthPts', 'Class', 'District']]
     return df_elo
 
-def elo_pred_formatting(event_name, win_pct, writer):
-    win_pct = pd.DataFrame(win_pct)
-    win_pct.index = win_pct.columns
-    header = pd.DataFrame(win_pct.columns).T
-    header.columns = win_pct.columns
-    win_pct = pd.concat([header, win_pct], axis=0)
-    df = win_pct.reset_index()
-    write_sheet(writer, df, str(event_name), layout="elo_pred", index=False, header=None)
-
-def elo_pred_sims(df_elo, K_VALUE, D_VALUE, EXP, writer):
-    Elo = MultiElo(k_value=K_VALUE, d_value=D_VALUE, score_function_base=EXP)
-    event_groups = df_elo.groupby('Event')
-    for event_name, df_event in event_groups:
-        df_event.sort_values(by='Competitor', inplace=True)
-        df_event.reset_index(drop=True, inplace=True)
-        win_pct = {}
-        
-        # loop over competitors
-        for _, c_row in df_event.iterrows():
-            win_pct.update({c_row['Competitor']:[]})
-            # for each competitor, loop over all over competitors (opponents)
-            for _, o_row in df_event.iterrows():
-                probability = Elo.simulate_win_probabilities([o_row['ELO'], c_row['ELO']],
-                                                             n_sim=500)[0][0]
-                win_pct[c_row['Competitor']].append(round(probability*100, 2))     
-        elo_pred_formatting(event_name, win_pct, writer)
-    writer.close()
 
 def convert_table_to_integers(df):
     df.columns = df.iloc[0]
@@ -333,7 +297,7 @@ def calculate_winpct(prelims=False):
                 weights.append(weight)
 
             df_winpct['Win%'] = weights                
-            df_winpct = df_winpct[['Event','Competitor','Win%']]
+            df_winpct = df_winpct[['Event', 'Competitor', 'Win%']]
             df = pd.concat([df, df_winpct],axis=0)
     df.sort_values(by=['Event', 'Competitor'], ascending=[True, True], inplace=True)
     df.reset_index(drop=True,inplace=True)
@@ -355,22 +319,21 @@ def add_winpct(df_elo):
     return df_elo
     
 def create_elo_tiers(df):
-    # df['Tier'] = df['ELO'].apply(get_elo_tier)
-    tiers = {"F":517,     # 0-517
-             "D-":610,    # 518-610
-             "D":750,     # 611-750
-             "D+":850,    # 751-850   manual break added
-             "C-":956,    # 851-956
-             "C":1023,    # 957-1023 
-             "C+":1132,   # 1024-1132
-             "B-":1229,   # 1133-1229
-             "B":1271,    # 1230-1271
-             "B+":1347,   # 1272-1347
-             "A-":1413,   # 1348-1413
-             "A":1488,    # 1414-1488
-             "A+":1600,   # 1489-1600
-             "S":1742,    # 1601-1742
-             "S+":float("inf"), # 1742+
+    tiers = {"F":  517,          # 0-517
+             "D-": 610,          # 518-610
+             "D":  750,          # 611-750
+             "D+": 850,          # 751-850   manual break added
+             "C-": 956,          # 851-956
+             "C":  1023,         # 957-1023 
+             "C+": 1132,         # 1024-1132
+             "B-": 1229,         # 1133-1229
+             "B":  1271,         # 1230-1271
+             "B+": 1347,         # 1272-1347
+             "A-": 1413,         # 1348-1413
+             "A":  1488,         # 1414-1488
+             "A+": 1600,         # 1489-1600
+             "S":  1742,         # 1601-1742
+             "S+": float("inf"), # 1742+
              } 
     tiers = [
         'F', 'D-', 'D', 'D+', 'C-', 'C', 'C+', 'B-', 'B', 'B+', 'A-', 'A', 'A+', 'S', 'S+',
@@ -404,7 +367,36 @@ def save_elo_formatting(df, most_recent_tournament=False):
         writer = pd.ExcelWriter(ROOT + rf'\Code\ELO\ELO ({most_recent_tournament}).xlsx',
                                 engine='xlsxwriter')
     write_sheet(writer, df, "ELO", layout="elo", index=False)
-    return writer
+    writer.close()
+
+
+def save_h2h_formatting(writer, df, event):
+    df = df.T.reset_index().T  # turns column names into row
+    df = df.reset_index()
+    write_sheet(writer, df, event, layout="h2h_master", index=False, header=None)
+    
+
+def attach_h2h_data(writer):
+    # Hi Noah. I'm choosing to store all dfs in this dictionary instead of replacing all
+    # master[event_name]'s to a simple `df` for the sake of debugging. 
+    # You can access everything in `master` at once; `df` would store one frame at a time.
+    master = {}  
+    for subdir, dirs, files in os.walk(ROOT + r'\Code\H2H\All Classes'):
+        for file in files:
+            event_name = file.replace('.xlsx','')
+            path = os.path.join(subdir, file)
+            data = {}
+            for sheet in ['WinPct', 'Net', 'Meetings', 'Wins']:
+                data[sheet] = pd.read_excel(path, sheet_name=sheet)
+                data[sheet] = data[sheet].astype(str)
+                data[sheet].index = data[sheet].columns[1:]
+            master[event_name] = data['WinPct'] + ' / ' + data['Net'] + ' / ' + data['Meetings'] + ' / ' + data['Wins']
+            master[event_name].drop([0], axis=1, inplace=True)
+            master[event_name].replace('nan / 0 / 0 / 0', '-', inplace=True)
+            
+            save_h2h_formatting(writer, master[event_name], event_name)
+            
+    writer.close()
 
 def run_elo(K_VALUE=100, D_VALUE=500, EXP=1, most_recent_tournament=False):
     df, elo_data, Elo, df_competitors, ChampsElo, StableElo, StableChampsElo = initialize_elo(K_VALUE, D_VALUE, EXP) #Consistently 5.0 seconds
@@ -414,4 +406,4 @@ def run_elo(K_VALUE=100, D_VALUE=500, EXP=1, most_recent_tournament=False):
     df_elo = expand_elo_stats(df_elo, df_competitors)
     df_elo = add_winpct(df_elo)
     writer = save_elo_formatting(df_elo, most_recent_tournament=most_recent_tournament)
-    elo_pred_sims(df_elo, K_VALUE, D_VALUE, EXP, writer)
+    attach_h2h_data(writer)

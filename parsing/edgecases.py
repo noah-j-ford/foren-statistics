@@ -166,7 +166,7 @@ def process_df_elim(df, sheet, tournament_name):
     df_semis = df[df['Break'] == 5]
     df_semis = process_df_semis(df_semis)
 
-    return df, df_finals, df_semis
+    return df_finals, df_semis
 
 
 def append_semi_and_finals_data(df, df_finals, df_semis):
@@ -209,7 +209,8 @@ def check_for_elim_rounds(df, sheet, tournament_name):
         df_elim = df.iloc[idx:,:]
         df = df.iloc[:idx,:]
         df = df.dropna(axis=1, how='all')
-        return process_df_elim(df_elim, sheet, tournament_name)
+        df_finals, df_semis = process_df_elim(df_elim, sheet, tournament_name)
+        return df, df_finals, df_semis
     except ValueError:
         return df, None, None
 

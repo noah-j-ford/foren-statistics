@@ -33,8 +33,6 @@ def update_4n6(NO_OID_FLAG=0, most_recent_tournament=False):
 
         #### H2Hs
         h2h.make_h2hs(NO_OID_FLAG=NO_OID_FLAG) 
-        h2h.trim_h2hs_to_specification(folder = "Class A") 
-        h2h.create_master_h2h_sheet() # No earthly idea how much runtime this adds
         progress_bar.update(200)  #0:36  ~10.9%
 
         #### ELO

@@ -91,7 +91,4 @@ Student names are not stored in this repository*. Name-correction and standardiz
 - elo_pred_sims should be stripped out and H2H.xlsx should be collapsed to be the other sheets within ELO.xlsx
 - calculate_recips_for_rounds within parsing.results is an incomplete generalization of calculate_finals_recips and calculate_prelims_recips
 - pull_out_div_from_prelims is potentially never used?
-- create_specifier_list needs to be moved to experiments
-- process_df_finals, create_semi_sections_column, process_df_semis, create_finals_list, process_df_elim, and append_semi_and_finals_data all should be migrated to edge_cases (rename corrections back to that)
-
 

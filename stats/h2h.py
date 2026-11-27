@@ -9,13 +9,11 @@ Creates:
     H2H/All Classes (Prelims)/{event_name}.xlsx
     H2H/Class A/{event_name}.xlsx
 """
-import os
 import copy
 import pandas as pd
 import numpy as np
 from config import EVENT_LIST, ROOT
 from formatting import write_sheet
-import experiments.experiments as exp
 
 
 def create_base_data(df_event):
@@ -93,7 +91,7 @@ def calculate_win_pct(wins, meetings):
 
 
 def calculate_h2h_data_sheets(event_name, section_choice, data, prelim_data):
-    data_sheets = {'WinPct':'', 'Net':'', 'Meetings':'', 'Wins':''}
+    data_sheets = {}
     if section_choice == 'All':
         data_sheets['Wins'] = pd.DataFrame(
             data[event_name]).transpose().sort_index().sort_index(axis=1)
@@ -152,65 +150,4 @@ def make_h2hs(NO_OID_FLAG=0):
     h2h_event_sheets(data, prelim_data, NO_OID_FLAG)
 
 
-def create_class_a_list():
-    df = pd.read_excel(ROOT + r'\Results by Entry.xlsx')
-    
-    df = df[['Competitor','Tm','Class','District']]
-    df = df.drop_duplicates(subset='Competitor', keep="first")
-    
-    class_a = df[df['Class'] == 'A']
-    class_a_list = class_a['Competitor'].to_list() 
-    class_a_list.append(0)
-    return class_a_list
 
-
-def trim_h2hs_to_specification(folder = "Class A"):
-    if folder == 'Class A':
-        specifier_list = create_class_a_list()
-    else:
-        specifier_list = exp.create_specifier_list()
-    
-    for subdir, dirs, files in os.walk(ROOT + r'\Code\H2H\All Classes'):
-        for file in files:
-            event_name = file.replace('.xlsx','')
-            path = os.path.join(subdir, file)
-            
-            data = {}
-            for sheet in ['WinPct', 'Net', 'Meetings', 'Wins']:
-                data[sheet] = pd.read_excel(path, sheet_name=sheet, header=None)
-                for i in range(2):  # Runs twice bc does one axis, transposes, does other
-                    data[sheet] = data[sheet][data[sheet][0].isin(specifier_list)].T
-            
-            writer = pd.ExcelWriter(ROOT + rf'\Code\H2H\{folder}\{event_name}.xlsx',
-                                    engine='xlsxwriter')
-            save_h2h_excel(writer, data)
-
-
-def save_master_formatting(writer, df, event):
-    df = df.T.reset_index().T  # turns column names into row
-    df = df.reset_index()
-    write_sheet(writer, df, event, layout="h2h_master", index=False, header=None)
-    
-
-def create_master_h2h_sheet():
-    writer = pd.ExcelWriter(ROOT + r'\H2Hs.xlsx', engine='xlsxwriter')
-    master = {}  
-    # Hi Noah. I'm choosing to store all dfs in this dictionary instead of replacing all
-    # master[event_name]'s to a simple `df` for the sake of debugging. 
-    # You can access everything in `master` at once; `df` would store one frame at a time.
-    for subdir, dirs, files in os.walk(ROOT + r'\Code\H2H\All Classes'):
-        for file in files:
-            event_name = file.replace('.xlsx','')
-            path = os.path.join(subdir, file)
-            data = {}
-            for sheet in ['WinPct', 'Net', 'Meetings', 'Wins']:
-                data[sheet] = pd.read_excel(path, sheet_name=sheet)
-                data[sheet] = data[sheet].astype(str)
-                data[sheet].index = data[sheet].columns[1:]
-            master[event_name] = data['WinPct'] + ' / ' + data['Net'] + ' / ' + data['Meetings'] + ' / ' + data['Wins']
-            master[event_name].drop([0], axis=1, inplace=True)
-            master[event_name].replace('nan / 0 / 0 / 0', '-', inplace=True)
-            
-            save_master_formatting(writer, master[event_name], event_name)
-            
-    writer.close()
