@@ -32,6 +32,9 @@ def map_tournament_order_onto_spreadsheet(df):
 
 def create_elo_sections_sheet(df_results, df_sections):
     df_results['Code'] = df_results['Code'].astype(str)
+    # after changing the pipeline to minimize excel read/writes, Unique_ID broke because Tournament
+    # was changed to `category` dtype somewhere earlier
+    df_results['Tournament'] = df_results['Tournament'].astype(str)
     df_results['Unique_ID'] = df_results['Tournament']+df_results['Event']+df_results['Code']
     id_dict = pd.Series(df_results.Competitor.values, index=df_results.Unique_ID).to_dict()
 
@@ -181,6 +184,11 @@ def initialize_elo():
     return Elos
 
 def calculate_elo_scores(df, elo_data, Elos):
+    # Yeah so the issue here is that you fill all the blanks when creating the sheet with
+    # blank strings ('') instead of np.nan so the columns are strings, but before when you saved
+    # and then reloaded that pandas just reads in the blank cells assuming as nan and its fine
+    # TL;DR - fix the ''s
+    df = pd.read_excel(ROOT + r'\Code\Sections by Room.xlsx')
     largest_section_size = len(df.filter(regex='Sp').columns)
     for i, row in df.iterrows():
         event_name, tournament_id = [row['Event'], row['Tournament_ID']]

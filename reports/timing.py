@@ -3,11 +3,11 @@ import pandas as pd
 
 import json, time
 from contextlib import contextmanager
-# from pathlib import Path
+from pathlib import Path
 from tqdm import tqdm
+from config import TIMINGS_PATH
 
-TIMINGS = "timings.json"
-
+TIMINGS = Path(TIMINGS_PATH)
 STAGE_NAMES = ['clean results', 'parse results', 
                'competitor stats', 'school stats', 'tournament stats',
                'parse sections', 'attach sections to entries',

@@ -192,7 +192,7 @@ def create_sections_by_judge(results_by_entry, sections_by_judge):
     data = create_reference_dict(results_by_entry)
     df = map_reference_dict(df, data) #5.972
     df = clean_judge_expanded(df)
-    evaluate_judges(df)
+    df = evaluate_judges(df)
     return df
 
 

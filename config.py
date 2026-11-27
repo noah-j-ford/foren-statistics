@@ -1,8 +1,9 @@
-YEAR = '25-26'
-MOST_RECENT_TOURNAMENT = 'A4'
+YEAR = '26-27'
+MOST_RECENT_TOURNAMENT = 'Pius X'
 
 ROOT = fr"C:\Users\noahj\Desktop\Forensics\{YEAR}"
 NAME_CORRECTIONS_PATH = r"C:\Users\noahj\Desktop\Forensics\Code\Standardization.xlsx"
+TIMINGS_PATH = r"C:\Users\noahj\Desktop\Forensics\Code\foren-statistics\reports\timings.json"
 EVENT_LIST = ['DI', 'DUO', 'ENT', 'EXT', 'HI', 'IMP', 'INF', 'OID', 'OO', 'POE', 'POI']
 ROUND_NAMES = ['1', '2', '3', 'Final', 'Semifinal']  # only used by stats_sections...
 
@@ -48,9 +49,10 @@ NO_JUDGE_SHEETS = ["SFL", "NQ_N", "NQ_N DX", "NQ_S", "NQ_S DX", "A3", "A4"]
 
 NE_NORTH_SCHOOLS = ['MN','LSW','MW','Norf','Fre','OBVH','Scotus','Marian','Benn','MS']
 
-ELO_K_VALUE = 100
-ELO_D_VALUE = 500
-ELO_EXP = 1
+K_VALUE = 100
+D_VALUE = 500
+EXP = 1
 BASE_RATING = 1000
 
-NO_OID_FLAG = 0
+NO_OID_FLAG = False
+SAVE_H2H_PRELIM_SHEETS = False

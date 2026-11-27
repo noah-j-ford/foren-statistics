@@ -354,7 +354,7 @@ def handle_finals_ranks(df):
             df['Finals']
             .str[i]
             .replace('0', np.nan)
-            .astype('Int64')
+            .astype('float64')
         )
     df.drop(['Finals'], axis=1, inplace=True)       
     return df
@@ -499,7 +499,7 @@ def mimic_excel_column_name_conventions(df):
     
 def parse_raw_results(data):
     df_merged = pd.DataFrame()
-    for tournament in data:          
+    for tournament in data:    
         df = data[tournament].copy()
         df = mimic_excel_column_name_conventions(df)
         df = add_blank_columns(df)

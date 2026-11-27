@@ -12,7 +12,7 @@ Creates:
 import copy
 import pandas as pd
 import numpy as np
-from config import EVENT_LIST, ROOT
+from config import EVENT_LIST, ROOT, NO_OID_FLAG, SAVE_H2H_PRELIM_SHEETS
 from formatting import write_sheet
 
 
@@ -26,8 +26,8 @@ def create_base_data(df_event):
 
 def collect_data(df):
     data = {e: {} for e in EVENT_LIST}
-    df = df[['Competitor','Tournament','Event','Code','P1','P2','P3','F1','F2','F3','F4','F5','Sc1','Sc2','Sc3','ScF']]
-    event_groups = df.groupby('Event')
+    temp = df[['Competitor','Tournament','Event','Code','P1','P2','P3','F1','F2','F3','F4','F5','Sc1','Sc2','Sc3','ScF']]
+    event_groups = temp.groupby('Event')
     for event_name, df_event in event_groups:
         base_data = create_base_data(df_event)
         event_data = base_data.copy()
@@ -63,7 +63,7 @@ def run_pairwise_comparisons(df, data):
                             # calculate the number of times candidate i was ranked higher than candidate j
                             i_better_count = 0
                             for k in range(len(ballot_data[section_name])): #1 should be number of judges
-                                if df_section.loc[i,ballot_data[section_name][k]] < df_section.loc[j,ballot_data[section_name][k]]:
+                                if df_section.loc[i, ballot_data[section_name][k]] < df_section.loc[j,ballot_data[section_name][k]]:
                                     i_better_count += 1
                             # add the result to the matrix
                             pairwise_matrix[i,j] = i_better_count
@@ -123,29 +123,31 @@ def save_h2h_excel(writer, data):
     writer.close()
 
 
-def h2h_event_sheets(data, prelim_data, NO_OID_FLAG=0):
+def h2h_event_sheets(data, prelim_data):
     for event_name in data:
-        if event_name == 'OID' and NO_OID_FLAG != 0:
+        if event_name == 'OID' and NO_OID_FLAG:
             pass
         else:
             for section_choice in ['Prelims', 'All']:
-                data_sheets = calculate_h2h_data_sheets(event_name, section_choice, data, prelim_data)
-                data_sheets = add_headers(data_sheets)
-                
                 if section_choice == 'All':
                     writer = pd.ExcelWriter(ROOT + rf'\Code\H2H\All Classes\{event_name}.xlsx',
                                             engine='xlsxwriter')
-                else:
+                elif SAVE_H2H_PRELIM_SHEETS:
                     writer = pd.ExcelWriter(ROOT + rf'\Code\H2H\All Classes (Prelims)\{event_name}.xlsx',
                                             engine='xlsxwriter')
+                else:
+                    continue
+                    
+                data_sheets = calculate_h2h_data_sheets(event_name, section_choice, data, prelim_data)
+                data_sheets = add_headers(data_sheets)
                 save_h2h_excel(writer, data_sheets)  
 
 
-def make_h2hs(df, NO_OID_FLAG=0):
+def make_h2hs(df):
     data = collect_data(df)
     df = df[['Competitor','Tournament','Event','Code','P1','P2','P3','F1','F2','F3','F4','F5','S1','S2','S3','Sc1','Sc2','Sc3','ScF','ScS']]
     data, prelim_data = run_pairwise_comparisons(df, data)
-    h2h_event_sheets(data, prelim_data, NO_OID_FLAG)
+    h2h_event_sheets(data, prelim_data)
 
 
 
