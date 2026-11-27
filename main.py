@@ -1,48 +1,58 @@
-from tqdm import tqdm
-
-import parsing.results as prs
-import parsing.sections as psc
+import parsing.results
+import parsing.sections
 from parsing import attach_sections
-import stats.competitors as stc
-import stats.schools as sch
-import stats.tournaments as stn
-import stats.judges as jdg
+import stats.competitors
+import stats.schools
+import stats.tournaments
+import stats.judges
 import stats.h2h as h2h
 import stats.elo as elo
 import stats.depthchart as dpt
+from reports.timing import Stages, STAGE_NAMES
 
-def update_4n6(NO_OID_FLAG=0, most_recent_tournament=False):
-    with tqdm(total=1000) as progress_bar:
-        
-        #### RESULTS
-        df = prs.process_results()  # returns Results by Entry 
-        stc.create_stats_by_competitor_sheet(df)
-        sch.create_school_ranks_sheets(df)  
-        stn.create_tournament_stats_sheet(df)
-        progress_bar.update(76) #0:25   ~7.6%
+def update_4n6():
+    stages = Stages(STAGE_NAMES)
+ 
+    #### RESULTS
+    with stages.stage('clean results'):
+        data = parsing.results.clean_raw_results()
+    with stages.stage('parse results'):
+        results_by_entry = parsing.results.parse_raw_results(data)
+    
+    with stages.stage('competitor stats'):
+        stats_by_competitor = stats.competitors.create_stats_by_competitor(results_by_entry)
+    with stages.stage('school stats'):
+        stats.schools.create_stats_by_school(results_by_entry)
+    with stages.stage('tournament stats'):
+        stats.tournaments.create_stats_by_tournament(results_by_entry)
 
-        #### PARSE SECTIONS
-        psc.parse_raw_sections()  # creates Sections by Room (fka Speaker by Speaker)
-        attach_sections.to_entries()  # appends section data to Results by Entry (fka Master by Rounds)
-        progress_bar.update(27+88+237)  #0:29  ~8.8%
+    #### PARSE SECTIONS
+    with stages.stage('parse sections'):
+        sections_by_judge, sections_by_room = parsing.sections.parse_raw_sections()
+    with stages.stage('attach sections to entries'):
+        results_by_entry = attach_sections.to_entries(results_by_entry, sections_by_judge)
 
-        
-        #### JUDGES (Rounds, Ballots, Error scores)
-        jdg.process_judges()
-        progress_bar.update(137)  #0:45  ~13.7%
+    
+    #### JUDGES (Rounds, Ballots, Error scores)
+    with stages.stage('sections by judge'):
+        sections_by_judge = stats.judges.create_sections_by_judge(results_by_entry, sections_by_judge)
+    with stages.stage('stats by judge'):
+        stats.judges.create_stats_by_judge(sections_by_judge)
 
-        #### H2Hs
-        h2h.make_h2hs(NO_OID_FLAG=NO_OID_FLAG) 
-        progress_bar.update(200)  #0:36  ~10.9%
+    #### H2Hs
+    with stages.stage('h2hs'):
+        h2h.make_h2hs(results_by_entry) 
 
-        #### ELO
-        elo.create_elo_sections_sheet() 
-        elo.run_elo(most_recent_tournament=most_recent_tournament)
-        progress_bar.update(228)  #1:07  ~20.4%
+    #### ELO
+    with stages.stage('elo sections by room'):
+        sections_by_room = elo.create_elo_sections_sheet(results_by_entry, sections_by_room)
+    with stages.stage('run elo'):
+        df_elo = elo.run_elo(stats_by_competitor, sections_by_room)
 
-        #### DEPTH CHART
-        dpt.make_depth_chart() 
-        progress_bar.update(4)  #1:07  ~20.4%
+    #### DEPTH CHART
+    with stages.stage('depth chart'):
+        dpt.make_depth_chart(stats_by_competitor, df_elo) 
+    stages.save()
 
 if __name__ == "__main__":
     update_4n6()

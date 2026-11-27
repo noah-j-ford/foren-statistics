@@ -64,8 +64,7 @@ def save_depthchart(df, only_mn=True):
         write_sheet(writer, df_event, event_name, layout="depth_chart", index=False)
     writer.close()
 
-def attach_elo_scores(df, only_mn):
-    df_elo = pd.read_excel(ROOT + r'\ELO.xlsx')
+def attach_elo_scores(df, df_elo, only_mn):
     if only_mn:
         df_elo = df_elo[df_elo['Tm'] == 'MN'].reset_index(drop=True)
         
@@ -106,8 +105,7 @@ def clean_for_display(df):
         axis=1, inplace=True)
     return df
 
-def make_depth_chart(only_mn=True):
-    df = pd.read_excel(ROOT + r'\Stats by Competitor.xlsx')
+def make_depth_chart(df, df_elo, only_mn=True):
     if only_mn:
         df = df[df['Tm'] == 'MN'].reset_index(drop=True)
     df = df[['Event', 'Competitor','Champs%','Break%','AvgRk','AvgChampsPlacement',
@@ -117,5 +115,5 @@ def make_depth_chart(only_mn=True):
     df['Total Champs Rank'] = round(df['ChampsTotal'] * df['AvgChampsPlacement'])
     df = calculate_depth_points(df)
     df = clean_for_display(df)    
-    df = attach_elo_scores(df, only_mn)
+    df = attach_elo_scores(df, df_elo, only_mn)
     save_depthchart(df, only_mn)

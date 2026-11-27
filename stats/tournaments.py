@@ -60,6 +60,6 @@ def get_tournament_stats(df):
     df_tournaments = get_nietoc_scores(df_tournaments)
     return df_tournaments
 
-def create_tournament_stats_sheet(df):
+def create_stats_by_tournament(df):
     df_tournaments = get_tournament_stats(df)
     df_tournaments.to_excel(ROOT + r'\Code\Stats by Tournament.xlsx')

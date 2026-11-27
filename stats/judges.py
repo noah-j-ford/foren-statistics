@@ -21,8 +21,7 @@ from config import ROOT
 from formatting import write_sheet
 std = Standardizer()
 
-def create_judge_sections():
-    df = pd.read_excel(ROOT + r'\Code\Sections by Judge.xlsx')
+def create_judge_sections(df):
     for i, row in df.iterrows():
         if pd.notna(row['Sp1']):
             # If there's a speaker in the round [not blank row], store the row temporarily
@@ -33,17 +32,14 @@ def create_judge_sections():
             df.loc[i, speakers] = filled_row[speakers]
     return df
 
-def create_reference_dict():
-    ref = pd.read_excel(ROOT + r'\Results by Entry.xlsx')
-    
+def create_reference_dict(df):    
     # List of columns we want to build dictionaries for.
     metrics = ['Competitor', 'Cume_P', 'Cume_F', 'PrelimResult',
                'FinalResult', 'P1', 'P2', 'P3', 'F1', 'F2', 'F3', 'F4', 'F5', 'S1', 'S2', 'S3']
     
     # Build the nested dictionary
     data = {}
-    tournament_groups = ref.groupby('Tournament')
-    
+    tournament_groups = df.groupby('Tournament')
     for tournament_name, df_tournament in tournament_groups:
         data[tournament_name] = {}
         
@@ -170,7 +166,7 @@ def get_accuracy_score(judge_ranks, consensus, squared=0):
     return accuracy_score
     
 def evaluate_judges(df):
-    judge_scores = {'Score':[], 'Squared':[]}  # !!!
+    judge_scores = util.create_container(['Score', 'Squared'])
     
     for i, row in df.iterrows():
         judge_ranks = df.filter(regex='Rk_').iloc[i, :8] #['Rk_1',(...), 'Rk_7']
@@ -188,6 +184,17 @@ def evaluate_judges(df):
     df['Score'] = judge_scores['Score']
     df['Squared'] = judge_scores['Squared']
     df.to_excel(ROOT + r'\Code\Sections by Judge.xlsx', index=False)
+    return df
+
+
+def create_sections_by_judge(results_by_entry, sections_by_judge):
+    df = create_judge_sections(sections_by_judge)
+    data = create_reference_dict(results_by_entry)
+    df = map_reference_dict(df, data) #5.972
+    df = clean_judge_expanded(df)
+    evaluate_judges(df)
+    return df
+
 
 def count_ballots(df):
     count = 0
@@ -199,7 +206,7 @@ def count_ballots(df):
     return count
 
 def create_judge_sheet(df):
-    data = {'Judge':[], 'Rounds':[], 'Ballots':[], 'Score':[], 'Squared':[]}  # !!!
+    data = util.create_container(['Judge', 'Rounds', 'Ballots', 'Score', 'Squared'])
     df['Judge'] = df['Judge'].apply(std.standardize_name)
     judge_groups = df.groupby('Judge')
     
@@ -219,7 +226,7 @@ def create_judge_sheet(df):
     return df_judges
 
 def process_judge_data(judges):
-    data = {'Judge':[], 'Team':[], 'Avg Char':[], 'Ballots':[], 'Char':[]}  # !!!
+    data = util.create_container(['Judge', 'Team', 'Avg Char', 'Ballots', 'Char'])
     
     for judge in judges:
         data['Judge'].append(judge)
@@ -314,13 +321,7 @@ def save_judge_formatting(df):
                 index=False, header=False)
     writer.close()
 
-def process_judges():
-    df = create_judge_sections() #6.768
-    data = create_reference_dict() #3.012
-    df = map_reference_dict(df, data) #5.972
-    
-    df = clean_judge_expanded(df)
-    evaluate_judges(df)
+def create_stats_by_judge(df):
     df_judges = create_judge_sheet(df)
     df_ballots = process_comment_length()
     df = combine_ballots_and_error(df_ballots, df_judges)

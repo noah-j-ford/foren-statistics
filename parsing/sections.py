@@ -152,6 +152,4 @@ def parse_raw_sections():
     df_by_judge = parse_to_section_by_judge()
     df_by_judge = standardize_judge_names(df_by_judge)
     df_by_room = convert_to_section_by_room(df_by_judge)
-    
-    df_by_judge.to_excel(ROOT + r'\Code\Sections by Judge.xlsx', index=False)
-    df_by_room.to_excel(ROOT + r'\Code\Sections by Room.xlsx', index=False)
+    return df_by_judge, df_by_room

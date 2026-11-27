@@ -88,7 +88,6 @@ Student names are not stored in this repository*. Name-correction and standardiz
 - minimize cosmetic changes that don't need to be done at that stage (e.g., the ordering of columns should not be touched constantly, it only needs to be set right before output if that output even really matters)
 - create_container is not fully implemented
 - continue cleaning comments, line widths, line breaks between functions, and formatting in general
-- elo_pred_sims should be stripped out and H2H.xlsx should be collapsed to be the other sheets within ELO.xlsx
 - calculate_recips_for_rounds within parsing.results is an incomplete generalization of calculate_finals_recips and calculate_prelims_recips
 - pull_out_div_from_prelims is potentially never used?
 

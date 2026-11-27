@@ -21,7 +21,7 @@ def create_identifier_column(df):
     return df
 
 
-def create_sections_by_entry_sheet(df_results):
+def create_sections_by_entry_sheet(df_results, df_sections):
     # from Claude; we'll see if this fixes the bottleneck?
     OUT_COLS = ['Tournament', 'Event', 'Code', 'Round', 'Sect.', 'JudgeCount', 
                 'Judge', 'J2', 'J3', 'J4', 'J5', 'RoundSize', 'SpkOrder',
@@ -30,7 +30,6 @@ def create_sections_by_entry_sheet(df_results):
     STAT_COLS = ['Sect.', 'JudgeCount', 'Judge', 'J2', 'J3', 'J4', 'J5',
                  'Sp1', 'Sp2', 'Sp3', 'Sp4', 'Sp5', 'Sp6', 'Sp7', 'Sp8']
     
-    df_sections = pd.read_excel(ROOT + r'\Code\Sections by Room.xlsx')
     sec = df_sections.reset_index(drop=True)
     code_cols = list(sec.columns[11:])            # identical slice to original iloc[j, 11:]
 
@@ -248,9 +247,9 @@ def update_columns(df_results, df):
     df.columns = columns
     return df    
 
-def to_entries():
-    df_results = pd.read_excel(ROOT + r'\Results by Entry.xlsx')
-    df_sections = create_sections_by_entry_sheet(df_results)
+def to_entries(df_results, df_sections):
+    df_sections = create_sections_by_entry_sheet(df_results, df_sections)
     df = append_section_data_to_results(df_results, df_sections)
     df = update_columns(df_results, df)
     df.to_excel(ROOT + r'\Results by Entry.xlsx', index=False)
+    return df

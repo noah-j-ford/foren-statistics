@@ -46,5 +46,11 @@ TOURNAMENTS = {
 
 NO_JUDGE_SHEETS = ["SFL", "NQ_N", "NQ_N DX", "NQ_S", "NQ_S DX", "A3", "A4"]
 
-
 NE_NORTH_SCHOOLS = ['MN','LSW','MW','Norf','Fre','OBVH','Scotus','Marian','Benn','MS']
+
+ELO_K_VALUE = 100
+ELO_D_VALUE = 500
+ELO_EXP = 1
+BASE_RATING = 1000
+
+NO_OID_FLAG = 0

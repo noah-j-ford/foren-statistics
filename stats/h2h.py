@@ -24,9 +24,8 @@ def create_base_data(df_event):
     return base_data
     
 
-def collect_data():
+def collect_data(df):
     data = {e: {} for e in EVENT_LIST}
-    df = pd.read_excel(ROOT + r'\Results by Entry.xlsx')
     df = df[['Competitor','Tournament','Event','Code','P1','P2','P3','F1','F2','F3','F4','F5','Sc1','Sc2','Sc3','ScF']]
     event_groups = df.groupby('Event')
     for event_name, df_event in event_groups:
@@ -142,9 +141,8 @@ def h2h_event_sheets(data, prelim_data, NO_OID_FLAG=0):
                 save_h2h_excel(writer, data_sheets)  
 
 
-def make_h2hs(NO_OID_FLAG=0):
-    data = collect_data()
-    df = pd.read_excel(ROOT + r'\Results by Entry.xlsx')
+def make_h2hs(df, NO_OID_FLAG=0):
+    data = collect_data(df)
     df = df[['Competitor','Tournament','Event','Code','P1','P2','P3','F1','F2','F3','F4','F5','S1','S2','S3','Sc1','Sc2','Sc3','ScF','ScS']]
     data, prelim_data = run_pairwise_comparisons(df, data)
     h2h_event_sheets(data, prelim_data, NO_OID_FLAG)

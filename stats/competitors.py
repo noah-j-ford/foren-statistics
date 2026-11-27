@@ -234,9 +234,9 @@ def get_competitor_stats_and_scores(df):
                         axis=1, inplace=True)
     return df_competitors
 
-def create_stats_by_competitor_sheet(df):
-    # df = pd.read_excel(ROOT + '\Results by Entry.xlsx')
+def create_stats_by_competitor(df):
     df = get_expanded_stats(df)
     save_results_by_entry(df)
     df = get_competitor_stats_and_scores(df)
     df.to_excel(ROOT + r'\Stats by Competitor.xlsx', index=False) 
+    return df

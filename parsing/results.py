@@ -153,7 +153,7 @@ def process_raw_dataframe(df, sheet):
         df = edg.attach_elim_data(df, df_finals, df_semis)
     return df
 
-def clean_base_results_format():
+def clean_raw_results():
     file_location = ROOT + r'\Manual\Results (Raw Format).xlsx'
     data = {}
     for sheet in util.get_tournament_list():
@@ -497,7 +497,7 @@ def mimic_excel_column_name_conventions(df):
     df.columns = np.where(counts == 0, new_columns, new_columns + '.' + counts.astype(str))
     return df
     
-def automate_results(data):
+def parse_raw_results(data):
     df_merged = pd.DataFrame()
     for tournament in data:          
         df = data[tournament].copy()
@@ -528,9 +528,3 @@ def automate_results(data):
     if YEAR == '25-26':
         df_merged = edg.manually_update_nat_quals_info_semis(df_merged)
     return df_merged
-
-def process_results():
-    data = clean_base_results_format()
-    df = automate_results(data)
-    return df
-    

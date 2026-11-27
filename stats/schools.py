@@ -83,19 +83,17 @@ def get_school_stats(df, champs=False):  #CLAUDE
     df_schools.rename({'index': 'Team'}, axis=1, inplace=True)
     return df_schools
 
-def save_school_ranks_sheet(df_schools, df_schools_champs):
+def save_stats_by_school(df_schools, df_schools_champs):
     df_schools = add_header_row(df_schools)
     df_schools_champs = add_header_row(df_schools_champs)
     
-    
     writer = pd.ExcelWriter(ROOT + r'\Code\Stats by School.xlsx', engine='xlsxwriter')
-    write_sheet(writer, df=df_schools, sheet_name="Prelims", layout="school_stats", index=False, header=None)
-    write_sheet(writer, df=df_schools_champs, sheet_name="Champs", layout="school_stats", index=False, header=None)
-
+    write_sheet(writer, df_schools, "Prelims", "school_stats", index=False, header=None)
+    write_sheet(writer, df_schools_champs, "Champs", "school_stats", index=False, header=None)
     writer.close()
     
 
-def create_school_ranks_sheets(df):
+def create_stats_by_school(df):
     df_schools = get_school_stats(df)
     df_schools_champs = get_school_stats(df, champs=True)
-    save_school_ranks_sheet(df_schools, df_schools_champs)
+    save_stats_by_school(df_schools, df_schools_champs)

@@ -3,12 +3,16 @@ import pandas as pd
 
 import json, time
 from contextlib import contextmanager
-from pathlib import Path
+# from pathlib import Path
 from tqdm import tqdm
-from config import ROOT
 
-TIMINGS = Path(ROOT) / "timings.json"
+TIMINGS = "timings.json"
 
+STAGE_NAMES = ['clean results', 'parse results', 
+               'competitor stats', 'school stats', 'tournament stats',
+               'parse sections', 'attach sections to entries',
+               'sections by judge', 'stats by judge',
+               'h2hs', 'elo sections by room', 'run elo', 'depth chart']
 class Stages:
     def __init__(self, names):
         last = json.loads(TIMINGS.read_text()) if TIMINGS.exists() else {}
@@ -28,7 +32,8 @@ class Stages:
         TIMINGS.write_text(json.dumps(self.new))
 
 def get_profiler_stats():
-    profile_path = r"C:\Users\noahj\Desktop\Forensics\Code\foren-statistics\run.prof"
+    # command prompt: python -m cProfile -o run_11_26_26.prof main.py
+    profile_path = r"C:\Users\noahj\Desktop\Forensics\Code\foren-statistics\run_11_26_26.prof"
     
     p = pstats.Stats(profile_path).sort_stats("cumulative")
     rows = []
