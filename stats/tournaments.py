@@ -9,6 +9,7 @@ Creates:
 import pandas as pd
 from config import YEAR, ROOT, EVENT_LIST, TOURNAMENTS
 from utils import evaluate_tournament_toc_score
+from reports.timing import progress
 
 def count_unique_values(df, col):
     return len(set(df[col]))
@@ -32,7 +33,7 @@ def get_nietoc_scores(df):
 def get_tournament_stats(df):
     tournament_groups = df.groupby('Tournament')
     data = {}
-    for tournament_name, df_tournament in tournament_groups:
+    for tournament_name, df_tournament in progress(tournament_groups):
         data.update(
                 {tournament_name: {
                     'Order':0, 'Schools':0, 'Competitors':0, 'Entries':0, 

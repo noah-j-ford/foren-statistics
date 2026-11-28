@@ -11,6 +11,7 @@ import numpy as np
 from utils import add_header_row
 from config import ROOT, EVENT_LIST
 from formatting import write_sheet
+from reports.timing import progress
 
 
 def get_event_group_stats(data, school_name):
@@ -56,7 +57,7 @@ def get_school_stats(df, champs=False):  #CLAUDE
         rank_cols = ['P1', 'P2', 'P3', 'P4', 'P5', 'P6']
 
     data = {}
-    for school_name, df_school in df.groupby('Tm'):
+    for school_name, df_school in progress(df.groupby('Tm')):
         row = {}
         if not champs:
             row['Class'] = df_school['Class'].iloc[0]

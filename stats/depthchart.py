@@ -11,6 +11,7 @@ import pandas as pd
 from standardization import Standardizer
 from config import ROOT, YEAR
 from formatting import write_sheet
+from reports.timing import progress
 warnings.filterwarnings('ignore')
 std = Standardizer()
 
@@ -54,7 +55,7 @@ def save_depthchart(df, only_mn=True):
     writer = pd.ExcelWriter(ROOT + rf'\Depth Chart{statewide}.xlsx', engine='xlsxwriter')
     
     event_groups = df.groupby('Event')
-    for event_name, df_event in event_groups:
+    for event_name, df_event in progress(event_groups):
         df['Competitor'] = df['Competitor'].apply(std.standardize_name)
         df_event.rename({'Competitor': event_name}, axis=1, inplace=True)
         df_event.drop(['Event'], axis=1, inplace=True)

@@ -1,5 +1,5 @@
-YEAR = '26-27'
-MOST_RECENT_TOURNAMENT = 'Pius X'
+YEAR = '25-26'
+MOST_RECENT_TOURNAMENT = 'A4'
 
 ROOT = fr"C:\Users\noahj\Desktop\Forensics\{YEAR}"
 NAME_CORRECTIONS_PATH = r"C:\Users\noahj\Desktop\Forensics\Code\Standardization.xlsx"

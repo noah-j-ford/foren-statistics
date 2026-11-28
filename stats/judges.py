@@ -19,6 +19,7 @@ from standardization import Standardizer
 import utils as util
 from config import ROOT
 from formatting import write_sheet
+from reports.timing import progress
 std = Standardizer()
 
 def create_judge_sections(df):
@@ -131,7 +132,7 @@ def clean_judge_expanded(df):
     for i in [f'{j+1}' for j in range(largest_section_size)]:
         df[f'Rk_{i}'] = np.nan
     df.reset_index(drop=True, inplace=True)
-    for i, row in df.iterrows():
+    for i, row in progress(df.iterrows(), total=len(df)):
         ranks = determine_ranks_list(df, row, i)
         for j, rank in enumerate(ranks): 
             df.at[i, f'Rk_{j+1}'] = rank
@@ -210,7 +211,7 @@ def create_judge_sheet(df):
     df['Judge'] = df['Judge'].apply(std.standardize_name)
     judge_groups = df.groupby('Judge')
     
-    for judge_name, df_judge in judge_groups:
+    for judge_name, df_judge in progress(judge_groups):
         data['Judge'].append(judge_name)
         data['Rounds'].append(len(df_judge))
         data['Ballots'].append(count_ballots(df_judge))

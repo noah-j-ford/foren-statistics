@@ -20,6 +20,7 @@ import numpy as np
 import parsing.edgecases as edg
 from config import YEAR, ROOT, TOURNAMENTS
 import utils as util
+from reports.timing import progress
 warnings.filterwarnings('ignore')
 
 # =============================================================================
@@ -156,7 +157,7 @@ def process_raw_dataframe(df, sheet):
 def clean_raw_results():
     file_location = ROOT + r'\Manual\Results (Raw Format).xlsx'
     data = {}
-    for sheet in util.get_tournament_list():
+    for sheet in progress(util.get_tournament_list()):
         df = pd.read_excel(file_location, sheet_name=sheet, header=None)
         df = process_raw_dataframe(df, sheet)
         data.update({sheet:df})
@@ -499,7 +500,7 @@ def mimic_excel_column_name_conventions(df):
     
 def parse_raw_results(data):
     df_merged = pd.DataFrame()
-    for tournament in data:    
+    for tournament in progress(data):    
         df = data[tournament].copy()
         df = mimic_excel_column_name_conventions(df)
         df = add_blank_columns(df)
@@ -519,7 +520,7 @@ def parse_raw_results(data):
         df = rename_columns(df)
         df = move_columns(df)
         
-        df_merged = pd.concat([df_merged,df],axis=0)
+        df_merged = pd.concat([df_merged, df],axis=0)
     df_merged = sort_sheet(df_merged) 
     df_merged = add_index_column(df_merged)
 

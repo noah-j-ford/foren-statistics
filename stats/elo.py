@@ -22,6 +22,7 @@ from multielo import MultiElo, Player
 from config import EVENT_LIST, ROOT, YEAR, TOURNAMENTS, BASE_RATING, K_VALUE, D_VALUE, EXP
 from formatting import write_sheet
 import utils as util
+from reports.timing import progress
 
 def map_tournament_order_onto_spreadsheet(df):
     df['Tournament_ID'] = df['Tournament'].map(TOURNAMENTS[YEAR])
@@ -190,7 +191,7 @@ def calculate_elo_scores(df, elo_data, Elos):
     # TL;DR - fix the ''s
     df = pd.read_excel(ROOT + r'\Code\Sections by Room.xlsx')
     largest_section_size = len(df.filter(regex='Sp').columns)
-    for i, row in df.iterrows():
+    for i, row in progress(df.iterrows(), total=len(df)):
         event_name, tournament_id = [row['Event'], row['Tournament_ID']]
         if tournament_id: #in [...]: #This was the "Select Tournaments" portion
             data = util.create_container(['Name', 'A', 'B', 'C'])

@@ -14,6 +14,7 @@ import pandas as pd
 import numpy as np
 from config import EVENT_LIST, ROOT, NO_OID_FLAG, SAVE_H2H_PRELIM_SHEETS
 from formatting import write_sheet
+from reports.timing import progress
 
 
 def create_base_data(df_event):
@@ -48,7 +49,7 @@ def run_pairwise_comparisons(df, data):
                    'ScF':['F1','F2','F3','F4','F5'], 'ScS':['S1','S2','S3']}
     
     tournament_groups = df.groupby('Tournament')
-    for tournament_name, df_tournament in tournament_groups:
+    for tournament_name, df_tournament in progress(tournament_groups):
         event_groups = df_tournament.groupby('Event')
         for event_name, df_event in event_groups:
             for section_name in ['Sc1','Sc2','Sc3','ScF','ScS']:

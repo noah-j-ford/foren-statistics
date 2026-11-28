@@ -12,6 +12,7 @@ import numpy as np
 from standardization import Standardizer
 from config import ROOT
 import utils as util
+from reports.timing import progress
 std = Standardizer()
 
 #### Base Section Sheets
@@ -60,11 +61,10 @@ def parse_to_section_by_judge():
     file_location = ROOT + r'\Manual\Sections (Raw Format).xlsx'
     
     master_df_by_judge = pd.DataFrame()
-    for tournament_index, sheet in enumerate(util.get_tournament_list()):
+    for tournament_index, sheet in enumerate(progress(util.get_tournament_list())):
         df = pd.read_excel(file_location, sheet_name=sheet, header=None)
         tournament_name = df[0][0]
         
-        # data = {'Tournament Name':df[0][0], 'Event List':[], 'Round List':[]}
         df = util.drop_speechwire_rows(df)
         event_column_list = util.create_event_column_list(df, tournament_name)
         rd_column_list = create_rd_column_list(df, tournament_name)

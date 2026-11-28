@@ -15,6 +15,7 @@ import stats.depthchart as dpt
 from config import ROOT
 from utils import evaluate_tournament_toc_score
 from formatting import write_sheet
+from reports.timing import progress
 warnings.filterwarnings('ignore')
 std = Standardizer()
 
@@ -49,7 +50,6 @@ def get_competitor_stats_by_event(df):
                    '3s':[], '4s':[], '5s':[], '6s':[], '1%':[], '2%':[], '3%':[], '4%':[],
                    '5%':[], '6%':[], 'Up%':[], 'Ballots':[], 'AvgFinalResult':[],
                    'AvgEntrySize':[], 'TOCPtsTotal':[], 'AvgTOCPts':[]} # !!!
-        # for i in df_event.index.to_list():
         for i, row in df_event.iterrows():
             competitor_name = row['Competitor']
             if competitor_name not in data:
@@ -206,7 +206,7 @@ def get_competitor_stats_and_scores(df):
     columns.append('TotalOutperformed')
     df_competitors = pd.DataFrame()
     event_groups = df.groupby('Event')
-    for event_name, df_event in event_groups:
+    for event_name, df_event in progress(event_groups):
         competitor_groups = df_event.groupby('Competitor')
         for competitor_name, df_competitor in competitor_groups:
             df_competitor.sort_values(by=['INDEX'], inplace=True)
