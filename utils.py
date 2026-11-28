@@ -6,7 +6,7 @@ std = Standardizer()
 def get_tournament_list(judges=False):
     tournament_list = list(TOURNAMENTS[YEAR])  # get list of keys, not dict
     index = tournament_list.index(MOST_RECENT_TOURNAMENT)
-    tournament_list = tournament_list[:index]
+    tournament_list = tournament_list[:index+1]
     if judges:
         for t in NO_JUDGE_SHEETS:
             try:
