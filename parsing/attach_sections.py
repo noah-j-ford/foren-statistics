@@ -14,6 +14,7 @@ import pandas as pd
 import numpy as np
 from config import ROOT, ROUND_NAMES
 import utils as util
+from reports.timing import progress
 
 def create_identifier_column(df):
     df['Code'] = df['Code'].astype(str)
@@ -76,13 +77,20 @@ def create_sections_by_entry_sheet(df_results, df_sections):
     return df
 
 #### Section Alignment
-def get_sections_and_sizes(df_results, df_sections):
+def create_judge_round_data(df_results, df_sections):
+    # merged get_sections_and_sizes here
+    data = util.create_container(['J1', 'J2', 'J3', 'J4', 'J5', 'J6', 
+                                  'F1', 'F2', 'F3', 'F4', 'F5',
+                                  'S1', 'S2', 'S3'])
     sections = util.create_container(ROUND_NAMES)
     sizes = util.create_container(ROUND_NAMES)
-    for i, row in df_results.iterrows():
-        index_string = str(row['Code'])+ row['Tournament'] + row['Event']
+    for i, row in progress(df_results.iterrows(), total=len(df_results)):      
+        index_string = str(row['Code'])+row['Tournament']+row['Event']
         df_competitor = df_sections[df_sections['IndexString'] == index_string]
+        if len(df_competitor) < 1:
+            print(index_string)
         for rd in ROUND_NAMES:
+            # formerly get_sections_and_sizes
             try:
                 j = df_competitor['Round'].to_list().index(rd)
                 sections[rd].append(df_competitor['Sect.'].to_list()[j])
@@ -90,21 +98,7 @@ def get_sections_and_sizes(df_results, df_sections):
             except ValueError:
                 sections[rd].append('')
                 sizes[rd].append('')
-    sections = pd.DataFrame(sections)
-    sizes = pd.DataFrame(sizes)
-    return sections, sizes
-
-def create_judge_rounds(df_results, df_sections):
-    data = util.create_container(['J1', 'J2', 'J3', 'J4', 'J5', 'J6', 
-                                  'F1', 'F2', 'F3', 'F4', 'F5',
-                                  'S1', 'S2', 'S3'])
-    
-    for i, row in df_results.iterrows():      
-        index_string = str(row['Code'])+row['Tournament']+row['Event']
-        df_competitor = df_sections[df_sections['IndexString'] == index_string]
-        if len(df_competitor) < 1:
-            print(index_string)
-        for rd in ROUND_NAMES:
+            #
             if row['Tournament'] in ['NQ_N','NQ_S', 'NQ_N DX', 'NQ_S DX']:
                 try:
                     j = df_competitor['Round'].to_list().index(rd)
@@ -224,19 +218,17 @@ def create_judge_rounds(df_results, df_sections):
                         data['J3'].append('')
                         
     df_judges = pd.DataFrame(data)
-    return df_judges 
+    sections = pd.DataFrame(sections)
+    sizes = pd.DataFrame(sizes)
+    return df_judges, sections, sizes
 
-
-def select_new_data(df_results, df_sections):
-    df_section_names, df_section_sizes = get_sections_and_sizes(df_results, df_sections)
-    df_judges = create_judge_rounds(df_results, df_sections)
-    return df_section_names, df_section_sizes, df_judges
 
 def append_section_data_to_results(df_results, df_sections):
-    df_section_names, df_section_sizes, df_judges = select_new_data(df_results, df_sections)
+    df_section_names, df_section_sizes, df_judges = create_judge_round_data(df_results, df_sections)
     df_add = pd.concat([df_section_names, df_section_sizes, df_judges], axis=1)
     df = pd.concat([df_results, df_add], axis=1)
     return df
+
 
 def update_columns(df_results, df):
     columns = df_results.columns
